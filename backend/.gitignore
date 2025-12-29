@@ -1,0 +1,25 @@
+
+###> symfony/framework-bundle ###
+/.env.local
+/.env.local.php
+/.env.*.local
+/config/secrets/prod/prod.decrypt.private.php
+/public/bundles/
+/var/
+/vendor/
+###< symfony/framework-bundle ###
+
+###> lexik/jwt-authentication-bundle ###
+/config/jwt/*.pem
+###< lexik/jwt-authentication-bundle ###
+
+###> Google credentials ###
+/config/google-credentials.json
+###< Google credentials ###
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~

@@ -1,0 +1,25 @@
+parameters:
+
+services:
+    _defaults:
+        autowire: true
+        autoconfigure: true
+
+    App\:
+        resource: '../src/'
+        exclude:
+            - '../src/DependencyInjection/'
+            - '../src/Entity/'
+            - '../src/Kernel.php'
+
+    App\Controller\:
+        resource: '../src/Controller/'
+        tags: ['controller.service_arguments']
+
+    App\Service\GoogleSheetsService:
+        arguments:
+            $credentialsPath: '%env(GOOGLE_APPLICATION_CREDENTIALS)%'
+
+    App\Service\N8nWebhookService:
+        arguments:
+            $webhookUrl: '%env(N8N_WEBHOOK_URL)%'
