@@ -16,10 +16,6 @@ services:
         resource: '../src/Controller/'
         tags: ['controller.service_arguments']
 
-    App\Service\GoogleSheetsService:
-        arguments:
-            $credentialsPath: '%env(GOOGLE_APPLICATION_CREDENTIALS)%'
-
     App\Service\N8nWebhookService:
         arguments:
             $webhookUrl: '%env(N8N_WEBHOOK_URL)%'

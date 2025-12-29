@@ -23,11 +23,8 @@ class Campaign
     #[ORM\Column(type: Types::TEXT, nullable: true)]
     private ?string $description = null;
 
-    #[ORM\Column(length: 500)]
-    private ?string $googleSheetId = null;
-
     #[ORM\Column(length: 255, nullable: true)]
-    private ?string $sheetName = null;
+    private ?string $fileName = null;
 
     #[ORM\Column]
     private ?int $totalContacts = 0;
@@ -57,12 +54,16 @@ class Campaign
     #[ORM\OneToMany(targetEntity: Dispatch::class, mappedBy: 'campaign', orphanRemoval: true)]
     private Collection $dispatches;
 
+    #[ORM\OneToMany(targetEntity: Contact::class, mappedBy: 'campaign', orphanRemoval: true)]
+    private Collection $contacts;
+
     #[ORM\Column(type: Types::JSON, nullable: true)]
     private ?array $configuration = null;
 
     public function __construct()
     {
         $this->dispatches = new ArrayCollection();
+        $this->contacts = new ArrayCollection();
         $this->createdAt = new \DateTimeImmutable();
     }
 
@@ -93,25 +94,14 @@ class Campaign
         return $this;
     }
 
-    public function getGoogleSheetId(): ?string
+    public function getFileName(): ?string
     {
-        return $this->googleSheetId;
+        return $this->fileName;
     }
 
-    public function setGoogleSheetId(string $googleSheetId): static
+    public function setFileName(?string $fileName): static
     {
-        $this->googleSheetId = $googleSheetId;
-        return $this;
-    }
-
-    public function getSheetName(): ?string
-    {
-        return $this->sheetName;
-    }
-
-    public function setSheetName(?string $sheetName): static
-    {
-        $this->sheetName = $sheetName;
+        $this->fileName = $fileName;
         return $this;
     }
 
@@ -240,6 +230,35 @@ class Campaign
     public function setConfiguration(?array $configuration): static
     {
         $this->configuration = $configuration;
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, Contact>
+     */
+    public function getContacts(): Collection
+    {
+        return $this->contacts;
+    }
+
+    public function addContact(Contact $contact): static
+    {
+        if (!$this->contacts->contains($contact)) {
+            $this->contacts->add($contact);
+            $contact->setCampaign($this);
+        }
+
+        return $this;
+    }
+
+    public function removeContact(Contact $contact): static
+    {
+        if ($this->contacts->removeElement($contact)) {
+            if ($contact->getCampaign() === $this) {
+                $contact->setCampaign(null);
+            }
+        }
+
         return $this;
     }
 }

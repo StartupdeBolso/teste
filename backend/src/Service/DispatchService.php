@@ -5,6 +5,7 @@ namespace App\Service;
 use App\Entity\Campaign;
 use App\Entity\Dispatch;
 use App\Repository\CampaignRepository;
+use App\Repository\ContactRepository;
 use App\Repository\DispatchRepository;
 use Doctrine\ORM\EntityManagerInterface;
 
@@ -14,24 +15,24 @@ class DispatchService
         private EntityManagerInterface $entityManager,
         private DispatchRepository $dispatchRepository,
         private CampaignRepository $campaignRepository,
-        private GoogleSheetsService $googleSheetsService,
+        private ContactRepository $contactRepository,
         private N8nWebhookService $n8nWebhookService
     ) {
     }
 
     public function createDispatchesForCampaign(Campaign $campaign): int
     {
-        $contacts = $this->googleSheetsService->getContacts(
-            $campaign->getGoogleSheetId(),
-            $campaign->getSheetName() ?? 'Sheet1',
-            $campaign->getDispatchLimit()
-        );
+        // Get contacts from database
+        $contacts = $this->contactRepository->findByCampaign($campaign);
+
+        // Limit by dispatchLimit
+        $contacts = array_slice($contacts, 0, $campaign->getDispatchLimit());
 
         $created = 0;
         foreach ($contacts as $contact) {
             $dispatch = new Dispatch();
             $dispatch->setCampaign($campaign);
-            $dispatch->setContactData($contact);
+            $dispatch->setContactData($contact->getData());
             $dispatch->setStatus('pending');
 
             $this->entityManager->persist($dispatch);

@@ -24,8 +24,7 @@
         "symfony/serializer": "6.4.*",
         "symfony/property-access": "6.4.*",
         "symfony/messenger": "6.4.*",
-        "google/apiclient": "^2.15",
-        "guzzlehttp/guzzle": "^7.8",
+        "phpoffice/phpspreadsheet": "^1.29",
         "symfony/http-client": "6.4.*"
     },
     "require-dev": {

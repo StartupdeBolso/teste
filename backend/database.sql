@@ -17,8 +17,7 @@ CREATE TABLE campaigns (
     user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     name VARCHAR(255) NOT NULL,
     description TEXT,
-    google_sheet_id VARCHAR(500) NOT NULL,
-    sheet_name VARCHAR(255),
+    file_name VARCHAR(255),
     total_contacts INTEGER NOT NULL DEFAULT 0,
     dispatch_limit INTEGER NOT NULL DEFAULT 0,
     dispatched_count INTEGER NOT NULL DEFAULT 0,
@@ -27,6 +26,14 @@ CREATE TABLE campaigns (
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
     started_at TIMESTAMP WITH TIME ZONE,
     completed_at TIMESTAMP WITH TIME ZONE
+);
+
+-- Tabela de contatos importados
+CREATE TABLE contacts (
+    id SERIAL PRIMARY KEY,
+    campaign_id INTEGER NOT NULL REFERENCES campaigns(id) ON DELETE CASCADE,
+    data JSON NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
 );
 
 -- Tabela de disparos
@@ -45,6 +52,7 @@ CREATE TABLE dispatches (
 -- Índices para melhorar performance
 CREATE INDEX idx_campaigns_user_id ON campaigns(user_id);
 CREATE INDEX idx_campaigns_status ON campaigns(status);
+CREATE INDEX idx_contacts_campaign_id ON contacts(campaign_id);
 CREATE INDEX idx_dispatches_campaign_id ON dispatches(campaign_id);
 CREATE INDEX idx_dispatches_status ON dispatches(status);
 CREATE INDEX idx_users_email ON users(email);
@@ -52,4 +60,5 @@ CREATE INDEX idx_users_email ON users(email);
 -- Comentários
 COMMENT ON TABLE users IS 'Tabela de usuários do sistema';
 COMMENT ON TABLE campaigns IS 'Tabela de campanhas de disparo';
+COMMENT ON TABLE contacts IS 'Tabela de contatos importados de arquivos';
 COMMENT ON TABLE dispatches IS 'Tabela de disparos individuais';

@@ -1,59 +1,37 @@
 # N8N Dispatch SaaS
 
-Micro SaaS para gerenciar e executar disparos em massa via webhook N8N, com integração ao Google Sheets.
+Micro SaaS simples para gerenciar e executar disparos em massa via webhook N8N. Faça upload de planilhas (CSV, Excel) e envie os dados para seu webhook do N8N.
 
 ## Visão Geral
 
-Este sistema permite criar campanhas de disparos automatizados usando dados de planilhas do Google Sheets. Os disparos são enviados para um webhook do N8N que você já possui, permitindo integrar com qualquer fluxo de automação.
+Este sistema permite criar campanhas de disparos automatizados usando dados de planilhas. Você faz upload do arquivo (CSV, XLS ou XLSX) diretamente no site, e os disparos são enviados para um webhook do N8N que você já possui.
 
 ### Principais Funcionalidades
 
-- Autenticação JWT multi-usuário
-- Importação de contatos do Google Sheets
-- Criação e gerenciamento de campanhas
-- Controle de quantidade de disparos
-- Envio controlado via webhook N8N
-- Monitoramento em tempo real
-- Sistema de filas para processamento
-- Estatísticas detalhadas
+- ✅ **Simples de configurar** - Apenas Supabase e webhook N8N
+- ✅ Autenticação JWT multi-usuário
+- ✅ Upload de planilhas (CSV, Excel)
+- ✅ Preview dos dados antes de criar campanha
+- ✅ Controle de quantidade de disparos
+- ✅ Monitoramento em tempo real
+- ✅ Sistema de filas para processamento
+- ✅ Estatísticas detalhadas
 
 ## Arquitetura
 
 ### Backend (Symfony 6.4 + PHP 8.1+)
 - API REST
-- Autenticação JWT (LexikJWTAuthenticationBundle)
-- Integração com Google Sheets API
-- Integração com webhook N8N
+- Autenticação JWT
+- Upload e processamento de arquivos CSV/XLSX
+- Envio para webhook N8N
 - PostgreSQL via Supabase
 
 ### Frontend (Vue 3 + Vite)
 - Interface moderna e responsiva
-- TailwindCSS para estilização
-- Pinia para gerenciamento de estado
+- Upload de arquivos drag-and-drop
+- Preview de dados
+- Monitoramento em tempo real
 - Deploy na Vercel
-
-## Estrutura do Projeto
-
-```
-.
-├── backend/              # API Symfony
-│   ├── config/          # Configurações
-│   ├── src/
-│   │   ├── Controller/  # Controllers da API
-│   │   ├── Entity/      # Entidades (User, Campaign, Dispatch)
-│   │   ├── Repository/  # Repositórios
-│   │   └── Service/     # Serviços (Google Sheets, N8N, Dispatch)
-│   └── public/          # Entry point
-│
-└── frontend/            # App Vue.js
-    ├── src/
-    │   ├── components/  # Componentes reutilizáveis
-    │   ├── views/       # Páginas
-    │   ├── stores/      # Pinia stores
-    │   ├── services/    # Cliente API
-    │   └── router/      # Rotas
-    └── public/
-```
 
 ## Instalação Rápida
 
@@ -63,8 +41,7 @@ Este sistema permite criar campanhas de disparos automatizados usando dados de p
 - Composer
 - Node.js 18+
 - npm ou yarn
-- Conta no Supabase
-- Projeto no Google Cloud com Sheets API ativada
+- Conta no Supabase (gratuita)
 - Webhook N8N configurado
 
 ### 1. Clone o repositório
@@ -84,13 +61,16 @@ composer install
 
 # Configurar variáveis de ambiente
 cp .env .env.local
-# Edite .env.local com suas configurações
+# Edite .env.local com suas configurações:
+# - DATABASE_URL (Supabase)
+# - JWT_PASSPHRASE
+# - N8N_WEBHOOK_URL
 
 # Gerar chaves JWT
 php bin/console lexik:jwt:generate-keypair
 
-# Executar migrations (ou criar tabelas no Supabase)
-php bin/console doctrine:migrations:migrate
+# Executar migrations (ou SQL no Supabase)
+# Execute o SQL em backend/database.sql no Supabase
 
 # Iniciar servidor
 symfony server:start
@@ -122,33 +102,25 @@ npm run build
 ### Supabase
 
 1. Crie um projeto no [Supabase](https://supabase.com)
-2. Copie a string de conexão PostgreSQL
-3. Configure no `backend/.env.local`:
-   ```
-   DATABASE_URL="postgresql://postgres:[PASSWORD]@db.[PROJECT_REF].supabase.co:5432/postgres"
-   ```
+2. No SQL Editor, execute o conteúdo de `backend/database.sql`
+3. Copie a string de conexão e cole em `backend/.env.local`
 
-### Google Sheets API
-
-1. Acesse [Google Cloud Console](https://console.cloud.google.com)
-2. Crie um projeto ou use um existente
-3. Ative a Google Sheets API
-4. Crie credenciais (Service Account)
-5. Baixe o JSON das credenciais
-6. Salve em `backend/config/google-credentials.json`
-7. Compartilhe suas planilhas com o email da service account
+```env
+DATABASE_URL="postgresql://postgres:[PASSWORD]@db.[PROJECT_REF].supabase.co:5432/postgres"
+```
 
 ### Webhook N8N
 
 1. No seu workflow N8N, adicione um nó Webhook
 2. Configure o método POST
 3. Copie a URL do webhook
-4. Configure no `backend/.env.local`:
-   ```
-   N8N_WEBHOOK_URL=https://your-n8n-instance.com/webhook/your-hook-id
-   ```
+4. Cole em `backend/.env.local`:
 
-O payload enviado para o webhook terá o formato:
+```env
+N8N_WEBHOOK_URL=https://your-n8n-instance.com/webhook/your-hook-id
+```
+
+O payload enviado será:
 ```json
 {
   "contact": {
@@ -168,14 +140,14 @@ O payload enviado para o webhook terá o formato:
 
 ### 1. Criar uma Campanha
 
-1. Faça login ou registre-se
+1. Faça login no sistema
 2. Clique em "Nova Campanha"
 3. Preencha nome e descrição
-4. Cole o ID da planilha do Google Sheets
-5. Selecione a aba desejada
-6. Visualize o preview dos dados
-7. Defina a quantidade de disparos
-8. Clique em "Criar Campanha"
+4. Faça upload da planilha (CSV, XLS ou XLSX)
+   - A primeira linha deve conter os cabeçalhos
+5. Visualize o preview dos dados
+6. Defina a quantidade de disparos
+7. Clique em "Criar Campanha"
 
 ### 2. Iniciar Disparos
 
@@ -185,8 +157,6 @@ O payload enviado para o webhook terá o formato:
 4. Acompanhe o progresso em tempo real
 
 ### 3. Processar Disparos
-
-Os disparos podem ser processados de duas formas:
 
 **Manualmente via API:**
 ```bash
@@ -204,18 +174,11 @@ curl -X POST http://localhost:8000/api/dispatches/process \
 
 ### Backend
 
-Você pode fazer deploy do backend em:
-- Heroku
-- DigitalOcean App Platform
-- Railway
-- Render
-- Qualquer VPS com PHP 8.1+
-
-**Passos básicos:**
+Deploy em Heroku, DigitalOcean, Railway ou VPS:
 1. Configure as variáveis de ambiente
-2. Execute `composer install --no-dev --optimize-autoloader`
-3. Execute as migrations
-4. Configure um servidor web (Nginx/Apache)
+2. Execute `composer install --no-dev`
+3. Execute as migrations/SQL
+4. Configure o servidor web
 
 ### Frontend (Vercel)
 
@@ -224,9 +187,7 @@ cd frontend
 vercel
 ```
 
-Ou conecte seu repositório GitHub ao Vercel para deploy automático.
-
-**Variáveis de ambiente na Vercel:**
+Configure a variável de ambiente:
 - `VITE_API_URL`: URL completa da API backend
 
 ## API Endpoints
@@ -239,62 +200,52 @@ Ou conecte seu repositório GitHub ao Vercel para deploy automático.
 ### Campanhas
 - `GET /api/campaigns` - Listar campanhas
 - `POST /api/campaigns` - Criar campanha
-- `GET /api/campaigns/{id}` - Detalhes da campanha
-- `PUT /api/campaigns/{id}` - Atualizar campanha
-- `DELETE /api/campaigns/{id}` - Deletar campanha
-- `POST /api/campaigns/{id}/start` - Iniciar campanha
-- `POST /api/campaigns/{id}/pause` - Pausar campanha
-- `POST /api/campaigns/{id}/resume` - Retomar campanha
+- `GET /api/campaigns/{id}` - Detalhes
+- `PUT /api/campaigns/{id}` - Atualizar
+- `DELETE /api/campaigns/{id}` - Deletar
+- `POST /api/campaigns/{id}/start` - Iniciar
+- `POST /api/campaigns/{id}/pause` - Pausar
+- `POST /api/campaigns/{id}/resume` - Retomar
+
+### Upload de Arquivos
+- `POST /api/files/upload/{campaignId}` - Upload de arquivo
+- `GET /api/files/preview/{campaignId}` - Preview dos dados
 
 ### Disparos
 - `GET /api/dispatches/campaign/{campaignId}` - Listar disparos
 - `POST /api/dispatches/process` - Processar disparos pendentes
 
-### Google Sheets
-- `POST /api/google-sheets/info` - Informações da planilha
-- `POST /api/google-sheets/preview` - Preview dos dados
-
 ## Banco de Dados
 
-### Entidades
+### Tabelas
 
-**users**
-- id, email, password, name, roles, created_at
+- **users**: Usuários do sistema
+- **campaigns**: Campanhas de disparo
+- **contacts**: Contatos importados dos arquivos
+- **dispatches**: Disparos individuais
 
-**campaigns**
-- id, user_id, name, description, google_sheet_id, sheet_name
-- total_contacts, dispatch_limit, dispatched_count
-- status, configuration, created_at, started_at, completed_at
+## Formatos de Arquivo Suportados
 
-**dispatches**
-- id, campaign_id, contact_data, status
-- response_data, error_message, retry_count
-- created_at, sent_at
+- **CSV**: Separado por vírgula, codificação UTF-8
+- **XLS**: Excel 97-2003
+- **XLSX**: Excel 2007+
 
-## Segurança
+**Importante**: A primeira linha deve conter os cabeçalhos (nomes das colunas).
 
-- Autenticação JWT com tokens de 1 hora
-- Senhas hasheadas com bcrypt
-- CORS configurado para permitir apenas frontend autorizado
-- Validação de entrada em todos os endpoints
-- Acesso a planilhas via Service Account do Google
-- Proteção contra SQL Injection (Doctrine ORM)
+## Exemplo de Planilha
 
-## Monitoramento
-
-O sistema fornece estatísticas em tempo real:
-- Total de contatos
-- Disparos enviados/pendentes/falhados
-- Progresso percentual
-- Auto-refresh a cada 10 segundos
+| nome | email | telefone |
+|------|-------|----------|
+| João Silva | joao@example.com | 11999999999 |
+| Maria Santos | maria@example.com | 11988888888 |
 
 ## Troubleshooting
 
-### Erro ao conectar Google Sheets
+### Erro ao fazer upload
 
-- Verifique se a API está ativada no Google Cloud
-- Confirme que o arquivo de credenciais está correto
-- Compartilhe a planilha com o email da service account
+- Verifique se a primeira linha contém cabeçalhos
+- Certifique-se de que o arquivo está em UTF-8
+- Tamanho máximo recomendado: 10MB
 
 ### Disparos não são processados
 

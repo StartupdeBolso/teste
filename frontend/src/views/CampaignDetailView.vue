@@ -131,13 +131,9 @@
       <div class="card">
         <h2 class="text-xl font-bold text-gray-900 mb-4">Informações</h2>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-          <div>
-            <p class="text-gray-500">ID da Planilha</p>
-            <p class="font-mono text-gray-900">{{ campaign.googleSheetId }}</p>
-          </div>
-          <div>
-            <p class="text-gray-500">Nome da Aba</p>
-            <p class="font-medium text-gray-900">{{ campaign.sheetName }}</p>
+          <div v-if="campaign.fileName">
+            <p class="text-gray-500">Arquivo Importado</p>
+            <p class="font-medium text-gray-900">{{ campaign.fileName }}</p>
           </div>
           <div>
             <p class="text-gray-500">Criada em</p>

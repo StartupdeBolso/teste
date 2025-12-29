@@ -5,7 +5,6 @@ namespace App\Controller;
 use App\Entity\Campaign;
 use App\Repository\CampaignRepository;
 use App\Service\DispatchService;
-use App\Service\GoogleSheetsService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -18,7 +17,6 @@ class CampaignController extends AbstractController
     public function __construct(
         private EntityManagerInterface $entityManager,
         private CampaignRepository $campaignRepository,
-        private GoogleSheetsService $googleSheetsService,
         private DispatchService $dispatchService
     ) {
     }
@@ -39,28 +37,15 @@ class CampaignController extends AbstractController
     {
         $data = json_decode($request->getContent(), true);
 
-        if (!isset($data['name']) || !isset($data['googleSheetId'])) {
-            return $this->json(['error' => 'Missing required fields'], 400);
+        if (!isset($data['name'])) {
+            return $this->json(['error' => 'Name is required'], 400);
         }
 
         try {
-            // Validate Google Sheet access and get info
-            $sheetInfo = $this->googleSheetsService->getSheetInfo($data['googleSheetId']);
-            $sheetName = $data['sheetName'] ?? $sheetInfo['sheets'][0]['title'];
-
-            $totalContacts = $this->googleSheetsService->countContacts(
-                $data['googleSheetId'],
-                $sheetName
-            );
-
             $campaign = new Campaign();
             $campaign->setUser($this->getUser());
             $campaign->setName($data['name']);
             $campaign->setDescription($data['description'] ?? null);
-            $campaign->setGoogleSheetId($data['googleSheetId']);
-            $campaign->setSheetName($sheetName);
-            $campaign->setTotalContacts($totalContacts);
-            $campaign->setDispatchLimit($data['dispatchLimit'] ?? $totalContacts);
             $campaign->setConfiguration($data['configuration'] ?? []);
 
             $this->entityManager->persist($campaign);
@@ -224,8 +209,7 @@ class CampaignController extends AbstractController
             'id' => $campaign->getId(),
             'name' => $campaign->getName(),
             'description' => $campaign->getDescription(),
-            'googleSheetId' => $campaign->getGoogleSheetId(),
-            'sheetName' => $campaign->getSheetName(),
+            'fileName' => $campaign->getFileName(),
             'totalContacts' => $campaign->getTotalContacts(),
             'dispatchLimit' => $campaign->getDispatchLimit(),
             'dispatchedCount' => $campaign->getDispatchedCount(),
