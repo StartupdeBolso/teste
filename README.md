@@ -125,14 +125,32 @@ O payload enviado será:
 {
   "contact": {
     "nome": "João Silva",
-    "email": "joao@example.com",
-    "telefone": "+5511999999999"
+    "telefone": "11999999999",
+    "enviado": ""
   },
   "metadata": {
     "campaign_id": 1,
     "dispatch_id": 123
   },
   "timestamp": "2024-01-15T10:30:00+00:00"
+}
+```
+
+**Resposta esperada do webhook N8N:**
+
+Sucesso:
+```json
+{
+  "success": true,
+  "sent": "sim"
+}
+```
+
+Erro:
+```json
+{
+  "success": false,
+  "sent": "não"
 }
 ```
 
@@ -232,12 +250,22 @@ Configure a variável de ambiente:
 
 **Importante**: A primeira linha deve conter os cabeçalhos (nomes das colunas).
 
-## Exemplo de Planilha
+## Formato Padrão da Planilha
 
-| nome | email | telefone |
-|------|-------|----------|
-| João Silva | joao@example.com | 11999999999 |
-| Maria Santos | maria@example.com | 11988888888 |
+Sua planilha deve ter **exatamente estas 3 colunas**:
+
+| nome | telefone | enviado |
+|------|----------|---------|
+| João Silva | 11999999999 | |
+| Maria Santos | 11988888888 | |
+| Pedro Oliveira | 11977777777 | |
+
+**Importante:**
+- `nome`: Nome do contato
+- `telefone`: Apenas números, sem formatação
+- `enviado`: Deixar vazio (será preenchido com "sim" ou "não" após o disparo)
+
+Veja o arquivo `exemplo-planilha.csv` na raiz do projeto para referência.
 
 ## Troubleshooting
 
