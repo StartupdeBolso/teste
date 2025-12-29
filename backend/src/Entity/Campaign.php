@@ -33,7 +33,16 @@ class Campaign
     private ?int $dispatchLimit = 0;
 
     #[ORM\Column]
+    private ?int $dailyLimit = 0;
+
+    #[ORM\Column]
     private ?int $dispatchedCount = 0;
+
+    #[ORM\Column]
+    private ?int $dispatchedToday = 0;
+
+    #[ORM\Column(nullable: true)]
+    private ?\DateTimeImmutable $lastDispatchDate = null;
 
     #[ORM\Column(length: 50)]
     private ?string $status = 'draft'; // draft, active, paused, completed, failed
@@ -127,6 +136,17 @@ class Campaign
         return $this;
     }
 
+    public function getDailyLimit(): ?int
+    {
+        return $this->dailyLimit;
+    }
+
+    public function setDailyLimit(int $dailyLimit): static
+    {
+        $this->dailyLimit = $dailyLimit;
+        return $this;
+    }
+
     public function getDispatchedCount(): ?int
     {
         return $this->dispatchedCount;
@@ -136,6 +156,37 @@ class Campaign
     {
         $this->dispatchedCount = $dispatchedCount;
         return $this;
+    }
+
+    public function getDispatchedToday(): ?int
+    {
+        return $this->dispatchedToday;
+    }
+
+    public function setDispatchedToday(int $dispatchedToday): static
+    {
+        $this->dispatchedToday = $dispatchedToday;
+        return $this;
+    }
+
+    public function getLastDispatchDate(): ?\DateTimeImmutable
+    {
+        return $this->lastDispatchDate;
+    }
+
+    public function setLastDispatchDate(?\DateTimeImmutable $lastDispatchDate): static
+    {
+        $this->lastDispatchDate = $lastDispatchDate;
+        return $this;
+    }
+
+    public function resetDailyCountIfNeeded(): void
+    {
+        $today = new \DateTimeImmutable('today');
+
+        if ($this->lastDispatchDate === null || $this->lastDispatchDate < $today) {
+            $this->dispatchedToday = 0;
+        }
     }
 
     public function getStatus(): ?string

@@ -83,12 +83,9 @@ class CampaignController extends AbstractController
             return $this->json(['error' => 'Campaign not found'], 404);
         }
 
-        if ($campaign->getStatus() !== 'draft') {
-            return $this->json(['error' => 'Only draft campaigns can be updated'], 400);
-        }
-
         $data = json_decode($request->getContent(), true);
 
+        // Nome e descrição podem ser editados sempre
         if (isset($data['name'])) {
             $campaign->setName($data['name']);
         }
@@ -97,8 +94,15 @@ class CampaignController extends AbstractController
             $campaign->setDescription($data['description']);
         }
 
+        // Limites só podem ser editados em draft ou podem ser aumentados
         if (isset($data['dispatchLimit'])) {
-            $campaign->setDispatchLimit($data['dispatchLimit']);
+            if ($campaign->getStatus() === 'draft' || $data['dispatchLimit'] >= $campaign->getDispatchLimit()) {
+                $campaign->setDispatchLimit($data['dispatchLimit']);
+            }
+        }
+
+        if (isset($data['dailyLimit'])) {
+            $campaign->setDailyLimit($data['dailyLimit']);
         }
 
         if (isset($data['configuration'])) {
@@ -212,12 +216,15 @@ class CampaignController extends AbstractController
             'fileName' => $campaign->getFileName(),
             'totalContacts' => $campaign->getTotalContacts(),
             'dispatchLimit' => $campaign->getDispatchLimit(),
+            'dailyLimit' => $campaign->getDailyLimit(),
             'dispatchedCount' => $campaign->getDispatchedCount(),
+            'dispatchedToday' => $campaign->getDispatchedToday(),
             'status' => $campaign->getStatus(),
             'configuration' => $campaign->getConfiguration(),
             'createdAt' => $campaign->getCreatedAt()->format('c'),
             'startedAt' => $campaign->getStartedAt()?->format('c'),
             'completedAt' => $campaign->getCompletedAt()?->format('c'),
+            'lastDispatchDate' => $campaign->getLastDispatchDate()?->format('c'),
         ];
     }
 }

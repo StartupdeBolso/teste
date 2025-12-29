@@ -48,8 +48,29 @@ class DispatchService
     {
         $dispatches = $this->dispatchRepository->findPendingDispatches($batchSize);
         $results = [];
+        $processedCampaigns = [];
 
         foreach ($dispatches as $dispatch) {
+            $campaign = $dispatch->getCampaign();
+            $campaignId = $campaign->getId();
+
+            // Reset daily count if needed (only once per campaign per run)
+            if (!isset($processedCampaigns[$campaignId])) {
+                $campaign->resetDailyCountIfNeeded();
+                $processedCampaigns[$campaignId] = true;
+            }
+
+            // Check if campaign has reached daily limit
+            if ($campaign->getDailyLimit() > 0 && $campaign->getDispatchedToday() >= $campaign->getDailyLimit()) {
+                $results[] = [
+                    'dispatch_id' => $dispatch->getId(),
+                    'status' => 'skipped',
+                    'success' => false,
+                    'message' => 'Daily limit reached for campaign',
+                ];
+                continue;
+            }
+
             $result = $this->processDispatch($dispatch);
             $results[] = $result;
         }
@@ -81,6 +102,10 @@ class DispatchService
                 // Update campaign dispatched count
                 $campaign = $dispatch->getCampaign();
                 $campaign->setDispatchedCount($campaign->getDispatchedCount() + 1);
+
+                // Update daily count
+                $campaign->setDispatchedToday($campaign->getDispatchedToday() + 1);
+                $campaign->setLastDispatchDate(new \DateTimeImmutable('today'));
 
                 // Check if campaign is completed
                 if ($campaign->getDispatchedCount() >= $campaign->getDispatchLimit()) {

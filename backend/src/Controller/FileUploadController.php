@@ -83,8 +83,14 @@ class FileUploadController extends AbstractController
             $campaign->setFileName($file->getClientOriginalName());
             $campaign->setTotalContacts(count($contacts));
 
+            // Set dispatch limit if not set or if less than total
             if (!$campaign->getDispatchLimit() || $campaign->getDispatchLimit() > count($contacts)) {
                 $campaign->setDispatchLimit(count($contacts));
+            }
+
+            // Set daily limit if not set (default to 100 per day)
+            if (!$campaign->getDailyLimit()) {
+                $campaign->setDailyLimit(min(100, count($contacts)));
             }
 
             $this->entityManager->flush();
