@@ -1,6 +1,9 @@
 #!/bin/bash
 
-echo "🚀 Iniciando servidor com PHP 8.4..."
+echo "🚀 Iniciando servidor PHP..."
+echo ""
+echo "Versão do PHP:"
+php --version | head -1
 echo ""
 echo "Servidor rodando em: http://localhost:8000"
 echo ""
@@ -11,4 +14,4 @@ echo ""
 echo "Pressione Ctrl+C para parar"
 echo ""
 
-/usr/bin/php8.4 -S localhost:8000 -t public/
+php -S localhost:8000 -t public/
