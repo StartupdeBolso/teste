@@ -12,8 +12,17 @@ class N8nWebhookService
     ) {
     }
 
-    public function sendDispatch(array $contactData, array $metadata = []): array
+    public function sendDispatch(array $contactData, array $metadata = [], ?string $customWebhookUrl = null): array
     {
+        $webhookUrl = $customWebhookUrl ?? $this->webhookUrl;
+
+        if (empty($webhookUrl)) {
+            return [
+                'success' => false,
+                'error' => 'No webhook URL configured',
+            ];
+        }
+
         try {
             $payload = [
                 'contact' => $contactData,
@@ -21,7 +30,7 @@ class N8nWebhookService
                 'timestamp' => (new \DateTime())->format('c'),
             ];
 
-            $response = $this->httpClient->request('POST', $this->webhookUrl, [
+            $response = $this->httpClient->request('POST', $webhookUrl, [
                 'json' => $payload,
                 'timeout' => 30,
             ]);
@@ -39,12 +48,12 @@ class N8nWebhookService
         }
     }
 
-    public function sendBatch(array $contacts, array $metadata = []): array
+    public function sendBatch(array $contacts, array $metadata = [], ?string $customWebhookUrl = null): array
     {
         $results = [];
 
         foreach ($contacts as $contact) {
-            $results[] = $this->sendDispatch($contact, $metadata);
+            $results[] = $this->sendDispatch($contact, $metadata, $customWebhookUrl);
 
             // Small delay between requests to avoid overwhelming the webhook
             usleep(100000); // 100ms

@@ -33,6 +33,10 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column]
     private ?\DateTimeImmutable $createdAt = null;
 
+    #[ORM\ManyToOne(targetEntity: Organization::class, inversedBy: 'users')]
+    #[ORM\JoinColumn(nullable: true)]
+    private ?Organization $organization = null;
+
     #[ORM\OneToMany(targetEntity: Campaign::class, mappedBy: 'user', orphanRemoval: true)]
     private Collection $campaigns;
 
@@ -139,6 +143,49 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
                 $campaign->setUser(null);
             }
         }
+
+        return $this;
+    }
+
+    public function getOrganization(): ?Organization
+    {
+        return $this->organization;
+    }
+
+    public function setOrganization(?Organization $organization): static
+    {
+        $this->organization = $organization;
+
+        return $this;
+    }
+
+    public function isSuperAdmin(): bool
+    {
+        return in_array('ROLE_SUPER_ADMIN', $this->roles);
+    }
+
+    public function isOrgAdmin(): bool
+    {
+        return in_array('ROLE_ORG_ADMIN', $this->roles) || $this->isSuperAdmin();
+    }
+
+    public function hasRole(string $role): bool
+    {
+        return in_array($role, $this->getRoles());
+    }
+
+    public function addRole(string $role): static
+    {
+        if (!in_array($role, $this->roles)) {
+            $this->roles[] = $role;
+        }
+
+        return $this;
+    }
+
+    public function removeRole(string $role): static
+    {
+        $this->roles = array_filter($this->roles, fn($r) => $r !== $role);
 
         return $this;
     }

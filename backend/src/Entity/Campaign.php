@@ -60,6 +60,10 @@ class Campaign
     #[ORM\JoinColumn(nullable: false)]
     private ?User $user = null;
 
+    #[ORM\ManyToOne(inversedBy: 'campaigns')]
+    #[ORM\JoinColumn(nullable: true)]
+    private ?Organization $organization = null;
+
     #[ORM\OneToMany(targetEntity: Dispatch::class, mappedBy: 'campaign', orphanRemoval: true)]
     private Collection $dispatches;
 
@@ -241,6 +245,17 @@ class Campaign
     public function setUser(?User $user): static
     {
         $this->user = $user;
+        return $this;
+    }
+
+    public function getOrganization(): ?Organization
+    {
+        return $this->organization;
+    }
+
+    public function setOrganization(?Organization $organization): static
+    {
+        $this->organization = $organization;
         return $this;
     }
 

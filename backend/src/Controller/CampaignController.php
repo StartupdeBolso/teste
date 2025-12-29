@@ -4,6 +4,7 @@ namespace App\Controller;
 
 use App\Entity\Campaign;
 use App\Repository\CampaignRepository;
+use App\Security\Voter\CampaignVoter;
 use App\Service\DispatchService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -25,7 +26,19 @@ class CampaignController extends AbstractController
     public function list(): JsonResponse
     {
         $user = $this->getUser();
-        $campaigns = $this->campaignRepository->findByUser($user);
+
+        // Super admin sees all campaigns
+        if ($user->isSuperAdmin()) {
+            $campaigns = $this->campaignRepository->findAll();
+        }
+        // Org admin sees all campaigns from their organization
+        elseif ($user->isOrgAdmin() && $user->getOrganization()) {
+            $campaigns = $this->campaignRepository->findBy(['organization' => $user->getOrganization()]);
+        }
+        // Regular users see only their own campaigns
+        else {
+            $campaigns = $this->campaignRepository->findByUser($user);
+        }
 
         return $this->json(array_map(function (Campaign $campaign) {
             return $this->serializeCampaign($campaign);
@@ -42,8 +55,11 @@ class CampaignController extends AbstractController
         }
 
         try {
+            $user = $this->getUser();
+
             $campaign = new Campaign();
-            $campaign->setUser($this->getUser());
+            $campaign->setUser($user);
+            $campaign->setOrganization($user->getOrganization());
             $campaign->setName($data['name']);
             $campaign->setDescription($data['description'] ?? null);
             $campaign->setConfiguration($data['configuration'] ?? []);
@@ -60,11 +76,13 @@ class CampaignController extends AbstractController
     #[Route('/{id}', name: 'api_campaigns_get', methods: ['GET'])]
     public function get(int $id): JsonResponse
     {
-        $campaign = $this->findCampaignOrFail($id);
+        $campaign = $this->campaignRepository->find($id);
 
         if (!$campaign) {
             return $this->json(['error' => 'Campaign not found'], 404);
         }
+
+        $this->denyAccessUnlessGranted(CampaignVoter::VIEW, $campaign);
 
         $stats = $this->dispatchService->getCampaignStats($campaign);
 
@@ -77,11 +95,13 @@ class CampaignController extends AbstractController
     #[Route('/{id}', name: 'api_campaigns_update', methods: ['PUT', 'PATCH'])]
     public function update(int $id, Request $request): JsonResponse
     {
-        $campaign = $this->findCampaignOrFail($id);
+        $campaign = $this->campaignRepository->find($id);
 
         if (!$campaign) {
             return $this->json(['error' => 'Campaign not found'], 404);
         }
+
+        $this->denyAccessUnlessGranted(CampaignVoter::EDIT, $campaign);
 
         $data = json_decode($request->getContent(), true);
 
@@ -117,11 +137,13 @@ class CampaignController extends AbstractController
     #[Route('/{id}', name: 'api_campaigns_delete', methods: ['DELETE'])]
     public function delete(int $id): JsonResponse
     {
-        $campaign = $this->findCampaignOrFail($id);
+        $campaign = $this->campaignRepository->find($id);
 
         if (!$campaign) {
             return $this->json(['error' => 'Campaign not found'], 404);
         }
+
+        $this->denyAccessUnlessGranted(CampaignVoter::DELETE, $campaign);
 
         if ($campaign->getStatus() === 'active') {
             return $this->json(['error' => 'Cannot delete active campaign'], 400);
@@ -136,11 +158,13 @@ class CampaignController extends AbstractController
     #[Route('/{id}/start', name: 'api_campaigns_start', methods: ['POST'])]
     public function start(int $id): JsonResponse
     {
-        $campaign = $this->findCampaignOrFail($id);
+        $campaign = $this->campaignRepository->find($id);
 
         if (!$campaign) {
             return $this->json(['error' => 'Campaign not found'], 404);
         }
+
+        $this->denyAccessUnlessGranted(CampaignVoter::START, $campaign);
 
         try {
             $this->dispatchService->startCampaign($campaign);
@@ -157,11 +181,13 @@ class CampaignController extends AbstractController
     #[Route('/{id}/pause', name: 'api_campaigns_pause', methods: ['POST'])]
     public function pause(int $id): JsonResponse
     {
-        $campaign = $this->findCampaignOrFail($id);
+        $campaign = $this->campaignRepository->find($id);
 
         if (!$campaign) {
             return $this->json(['error' => 'Campaign not found'], 404);
         }
+
+        $this->denyAccessUnlessGranted(CampaignVoter::EDIT, $campaign);
 
         try {
             $this->dispatchService->pauseCampaign($campaign);
@@ -178,11 +204,13 @@ class CampaignController extends AbstractController
     #[Route('/{id}/resume', name: 'api_campaigns_resume', methods: ['POST'])]
     public function resume(int $id): JsonResponse
     {
-        $campaign = $this->findCampaignOrFail($id);
+        $campaign = $this->campaignRepository->find($id);
 
         if (!$campaign) {
             return $this->json(['error' => 'Campaign not found'], 404);
         }
+
+        $this->denyAccessUnlessGranted(CampaignVoter::EDIT, $campaign);
 
         try {
             $this->dispatchService->resumeCampaign($campaign);
@@ -194,17 +222,6 @@ class CampaignController extends AbstractController
         } catch (\Exception $e) {
             return $this->json(['error' => $e->getMessage()], 400);
         }
-    }
-
-    private function findCampaignOrFail(int $id): ?Campaign
-    {
-        $campaign = $this->campaignRepository->find($id);
-
-        if ($campaign && $campaign->getUser() !== $this->getUser()) {
-            return null;
-        }
-
-        return $campaign;
     }
 
     private function serializeCampaign(Campaign $campaign): array

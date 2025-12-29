@@ -86,12 +86,16 @@ class DispatchService
         $this->entityManager->flush();
 
         try {
+            $campaign = $dispatch->getCampaign();
+            $webhookUrl = $campaign->getOrganization()?->getWebhookUrl();
+
             $result = $this->n8nWebhookService->sendDispatch(
                 $dispatch->getContactData(),
                 [
-                    'campaign_id' => $dispatch->getCampaign()->getId(),
+                    'campaign_id' => $campaign->getId(),
                     'dispatch_id' => $dispatch->getId(),
-                ]
+                ],
+                $webhookUrl
             );
 
             if ($result['success']) {
