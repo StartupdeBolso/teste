@@ -1,353 +1,494 @@
-# Guia de Configuração Passo a Passo
+# Guia de Configuração - N8N Dispatch SaaS
 
-Este guia te ajudará a configurar e executar o N8N Dispatch SaaS do zero.
+Este guia vai te ajudar a configurar o sistema do zero em **menos de 10 minutos**.
 
-## Pré-requisitos
+## O que você precisa
 
-Antes de começar, certifique-se de ter:
-
-- [ ] PHP 8.1 ou superior instalado
-- [ ] Composer instalado
-- [ ] Node.js 18+ instalado
-- [ ] npm ou yarn instalado
+- [ ] PHP 8.1 ou superior
+- [ ] Composer
+- [ ] Node.js 18+
 - [ ] Conta no Supabase (gratuita)
-- [ ] Conta no Google Cloud (gratuita)
-- [ ] Workflow N8N com webhook configurado
+- [ ] Workflow N8N com webhook
 
-## Passo 1: Configurar Supabase
+---
+
+## Passo 1: Configurar Supabase (5 minutos)
 
 ### 1.1 Criar projeto
 
-1. Acesse [supabase.com](https://supabase.com)
-2. Clique em "New Project"
-3. Preencha os dados:
-   - Nome do projeto
-   - Database Password (anote esta senha!)
-   - Região (escolha a mais próxima)
-4. Aguarde a criação do projeto (1-2 minutos)
+1. Acesse [supabase.com](https://supabase.com) e faça login (ou crie uma conta grátis)
+2. No dashboard, clique no botão **"New project"**
+3. Escolha sua **Organization** (se for seu primeiro projeto, crie uma nova)
+4. Preencha os dados:
+   - **Name**: `n8n-dispatch-saas` (ou qualquer nome)
+   - **Database Password**: Crie uma senha forte
+     - **ANOTE EM UM LUGAR SEGURO!**
+     - Exemplo: `MinhaS3nh@2024!`
+   - **Region**: Escolha a mais próxima
+     - Brasil: `South America (São Paulo)`
+     - Outros: escolha o mais próximo
+   - **Pricing Plan**: `Free` (gratuito)
+5. Clique em **"Create new project"**
+6. Aguarde 1-2 minutos (uma barra de progresso vai aparecer)
 
-### 1.2 Criar tabelas
+### 1.2 Criar tabelas do banco
 
-1. No painel do Supabase, vá em "SQL Editor"
-2. Clique em "New Query"
-3. Copie o conteúdo do arquivo `backend/database.sql`
-4. Cole no editor e clique em "Run"
-5. Verifique se as tabelas foram criadas em "Table Editor"
+1. No menu lateral esquerdo, clique em **"SQL Editor"** (ícone `</>`)
+2. Clique no botão **"New query"** (canto superior direito)
+3. No seu computador, abra o arquivo `backend/database.sql`
+4. Copie **TODO** o conteúdo (Ctrl+A, Ctrl+C)
+5. Cole no editor SQL do Supabase (Ctrl+V)
+6. Clique em **"Run"** (ou pressione Ctrl+Enter)
+7. Você deve ver: **"Success. No rows returned"** (em verde)
+
+**Confirmar que funcionou:**
+- Clique em **"Table Editor"** no menu lateral
+- Você deve ver **4 tabelas**: `users`, `campaigns`, `contacts`, `dispatches`
 
 ### 1.3 Obter string de conexão
 
-1. Vá em "Settings" > "Database"
-2. Em "Connection String" > "URI", copie a string
-3. Substitua `[YOUR-PASSWORD]` pela senha do banco
-4. Anote esta string, será usada no backend
+1. No menu lateral, clique no ícone de **engrenagem** (⚙️) para abrir **"Project Settings"**
+2. Clique em **"Database"** no menu de configurações
+3. Role a página até **"Connection string"**
+4. Você verá várias abas, clique em **"URI"** (não use "Session mode")
+5. Copie a string completa (clique no ícone de copiar)
+6. Ela será algo assim:
+   ```
+   postgresql://postgres.[abc123]:[YOUR-PASSWORD]@aws-0-sa-east-1.pooler.supabase.com:6543/postgres
+   ```
 
-## Passo 2: Configurar Google Sheets API
+**IMPORTANTE - Substituir a senha:**
+- Onde está `[YOUR-PASSWORD]`, substitua pela senha que você criou no passo 1.1
+- **ANTES**: `...:[YOUR-PASSWORD]@aws...`
+- **DEPOIS**: `...:MinhaS3nh@2024!@aws...`
 
-### 2.1 Criar projeto no Google Cloud
-
-1. Acesse [console.cloud.google.com](https://console.cloud.google.com)
-2. Clique em "Select a project" > "New Project"
-3. Dê um nome ao projeto e clique em "Create"
-
-### 2.2 Ativar Google Sheets API
-
-1. No menu lateral, vá em "APIs & Services" > "Library"
-2. Busque por "Google Sheets API"
-3. Clique em "Enable"
-
-### 2.3 Criar Service Account
-
-1. Vá em "APIs & Services" > "Credentials"
-2. Clique em "Create Credentials" > "Service Account"
-3. Preencha:
-   - Service account name: `n8n-dispatch-saas`
-   - Service account ID: (gerado automaticamente)
-4. Clique em "Create and Continue"
-5. Pule os passos opcionais e clique em "Done"
-
-### 2.4 Gerar chave JSON
-
-1. Na lista de Service Accounts, clique no email criado
-2. Vá na aba "Keys"
-3. Clique em "Add Key" > "Create new key"
-4. Selecione "JSON" e clique em "Create"
-5. Um arquivo JSON será baixado
-6. Renomeie para `google-credentials.json`
-7. Mova para `backend/config/google-credentials.json`
-
-### 2.5 Compartilhar planilhas
-
-Para cada planilha que você quiser usar:
-
-1. Abra a planilha no Google Sheets
-2. Clique em "Share"
-3. Cole o email da service account (está no arquivo JSON, campo `client_email`)
-4. Dê permissão de "Viewer"
-5. Clique em "Send"
-
-## Passo 3: Configurar Webhook N8N
-
-### 3.1 No seu workflow N8N existente
-
-1. Adicione um nó "Webhook"
-2. Configure:
-   - HTTP Method: POST
-   - Path: qualquer caminho que desejar
-3. Ative o workflow
-4. Copie a URL do webhook
-5. Anote esta URL, será usada no backend
-
-### 3.2 Testar webhook (opcional)
-
-```bash
-curl -X POST https://your-n8n-instance.com/webhook/your-path \
-  -H "Content-Type: application/json" \
-  -d '{
-    "contact": {
-      "nome": "Teste",
-      "email": "teste@example.com"
-    },
-    "metadata": {
-      "campaign_id": 1,
-      "dispatch_id": 1
-    }
-  }'
+**Exemplo final:**
+```
+postgresql://postgres.abc123:MinhaS3nh@2024!@aws-0-sa-east-1.pooler.supabase.com:6543/postgres
 ```
 
-## Passo 4: Configurar Backend
+7. **Copie e guarde esta string completa** (com a senha substituída)
 
-### 4.1 Instalar dependências
+**Esqueceu a senha?**
+- Em Project Settings > Database > Clique em "Reset database password"
+
+✅ **Supabase configurado!**
+
+---
+
+## Passo 2: Configurar Webhook N8N (2 minutos)
+
+### 2.1 No seu workflow N8N
+
+1. Abra seu workflow no N8N
+2. Adicione um nó **"Webhook"** (se ainda não tiver)
+3. Configure:
+   - **HTTP Method**: `POST`
+   - **Path**: escolha um nome (ex: `disparo-whatsapp`)
+   - **Response Mode**: `Respond Immediately`
+4. **Ative o workflow** (botão "Active" no canto superior direito)
+5. Copie a **URL completa** que aparece no nó Webhook
+   - Exemplo: `https://seu-n8n.com/webhook/disparo-whatsapp`
+6. **Guarde esta URL**
+
+### 2.2 Formato do payload que você vai receber
+
+```json
+{
+  "contact": {
+    "nome": "João Silva",
+    "telefone": "11999999999",
+    "enviado": ""
+  },
+  "metadata": {
+    "campaign_id": 1,
+    "dispatch_id": 123
+  },
+  "timestamp": "2024-01-15T10:30:00+00:00"
+}
+```
+
+### 2.3 Formato da resposta que seu webhook deve retornar
+
+**Sucesso:**
+```json
+{
+  "success": true,
+  "sent": "sim"
+}
+```
+
+**Erro:**
+```json
+{
+  "success": false,
+  "sent": "não"
+}
+```
+
+✅ **Webhook N8N configurado!**
+
+---
+
+## Passo 3: Configurar Backend (3 minutos)
+
+### 3.1 Instalar dependências
+
+Abra o terminal na pasta do projeto e execute:
 
 ```bash
 cd backend
 composer install
 ```
 
-### 4.2 Configurar variáveis de ambiente
+Aguarde (pode levar 1-2 minutos). Você verá várias linhas de instalação.
+
+### 3.2 Configurar variáveis de ambiente
 
 ```bash
-cp .env .env.local
+cp .env.example .env.local
 ```
 
-Edite `backend/.env.local`:
+Abra o arquivo `.env.local` em um editor de texto e edite:
 
 ```env
+# 1. Deixe como está
 APP_ENV=dev
-APP_SECRET=ALTERE_PARA_STRING_ALEATORIA
 
-# Supabase - cole a string de conexão
-DATABASE_URL="postgresql://postgres:SUA_SENHA@db.xxxxx.supabase.co:5432/postgres"
+# 2. Troque por uma string aleatória qualquer
+APP_SECRET=minha_string_super_secreta_123
 
-# JWT - escolha uma senha forte
-JWT_PASSPHRASE=sua_senha_jwt_forte
+# 3. Cole a string de conexão do Supabase (do Passo 1.3)
+DATABASE_URL="postgresql://postgres.abc:MinhaS3nh@2024!@aws-0-sa-east-1.pooler.supabase.com:6543/postgres"
 
-# Google Sheets - caminho do arquivo JSON
-GOOGLE_APPLICATION_CREDENTIALS=%kernel.project_dir%/config/google-credentials.json
+# 4. Deixe como está
+JWT_SECRET_KEY=%kernel.project_dir%/config/jwt/private.pem
+JWT_PUBLIC_KEY=%kernel.project_dir%/config/jwt/public.pem
 
-# N8N - URL do webhook
-N8N_WEBHOOK_URL=https://your-n8n.com/webhook/your-path
+# 5. Crie uma senha para o JWT (pode ser qualquer coisa)
+JWT_PASSPHRASE=MinhaS3nhaJWT2024
 
-# CORS - permitir frontend
+# 6. Cole a URL do webhook do N8N (do Passo 2.1)
+N8N_WEBHOOK_URL=https://seu-n8n.com/webhook/disparo-whatsapp
+
+# 7. Deixe como está
 CORS_ALLOW_ORIGIN='^https?://(localhost|127\.0\.0\.1|.*\.vercel\.app)(:[0-9]+)?$'
 ```
 
-### 4.3 Gerar chaves JWT
+Salve o arquivo.
+
+### 3.3 Gerar chaves JWT
+
+No terminal, execute:
 
 ```bash
 php bin/console lexik:jwt:generate-keypair
 ```
 
-Isso criará:
-- `config/jwt/private.pem`
-- `config/jwt/public.pem`
+Deve aparecer: `✓ Keys successfully generated!`
 
-### 4.4 Testar conexão com banco
+### 3.4 Iniciar servidor
 
 ```bash
-php bin/console doctrine:query:sql "SELECT 1"
-```
-
-Se retornar erro, verifique a string de conexão.
-
-### 4.5 Iniciar servidor
-
-```bash
+# Se você tem Symfony CLI:
 symfony server:start
-```
 
-Ou se não tiver Symfony CLI:
-
-```bash
+# OU se não tiver:
 php -S localhost:8000 -t public/
 ```
 
-Teste em: http://localhost:8000/api
+**Deixe este terminal aberto!**
 
-## Passo 5: Configurar Frontend
+Você deve ver algo como:
+```
+[OK] Server listening on http://127.0.0.1:8000
+```
 
-### 5.1 Instalar dependências
+✅ **Backend rodando em http://localhost:8000**
+
+---
+
+## Passo 4: Configurar Frontend (2 minutos)
+
+### 4.1 Instalar dependências
+
+Abra um **NOVO terminal** (deixe o backend rodando) e execute:
 
 ```bash
 cd frontend
 npm install
 ```
 
-### 5.2 Configurar variáveis de ambiente
+Aguarde (1-2 minutos).
+
+### 4.2 Configurar variáveis de ambiente
 
 ```bash
 cp .env.example .env
 ```
 
-Edite `frontend/.env`:
+O arquivo `.env` já vem configurado:
 
 ```env
 VITE_API_URL=/api
 ```
 
-Para desenvolvimento, `/api` fará proxy para `http://localhost:8000/api`.
+Não precisa mudar nada!
 
-### 5.3 Iniciar servidor de desenvolvimento
+### 4.3 Iniciar servidor
 
 ```bash
 npm run dev
 ```
 
-Acesse: http://localhost:3000
+Você deve ver:
 
-## Passo 6: Testar o Sistema
+```
+  VITE v5.0.0  ready in xxx ms
 
-### 6.1 Registrar usuário
+  ➜  Local:   http://localhost:3000/
+  ➜  Network: use --host to expose
+```
 
-1. Acesse http://localhost:3000
-2. Clique em "Não tem uma conta? Registre-se"
-3. Preencha nome, email e senha
-4. Clique em "Registrar"
+✅ **Frontend rodando em http://localhost:3000**
 
-### 6.2 Criar primeira campanha
+---
 
-1. Clique em "Nova Campanha"
+## Passo 5: Testar o Sistema (5 minutos)
+
+### 5.1 Acessar e criar conta
+
+1. Abra seu navegador em: **http://localhost:3000**
+2. Clique em **"Não tem uma conta? Registre-se"**
+3. Preencha:
+   - **Nome**: Seu nome
+   - **Email**: seu@email.com
+   - **Senha**: mínimo 6 caracteres
+4. Clique em **"Registrar"**
+
+Você será redirecionado para o dashboard!
+
+### 5.2 Preparar planilha de teste
+
+Use o arquivo `exemplo-planilha.csv` que está na raiz do projeto.
+
+**OU crie sua própria planilha:**
+
+**CSV (recomendado para teste):**
+```csv
+nome,telefone,enviado
+João Silva,11999999999,
+Maria Santos,11988888888,
+Pedro Oliveira,11977777777,
+```
+
+**Excel (.xlsx):**
+
+| nome | telefone | enviado |
+|------|----------|---------|
+| João Silva | 11999999999 | |
+| Maria Santos | 11988888888 | |
+| Pedro Oliveira | 11977777777 | |
+
+**Regras importantes:**
+- ✅ Primeira linha SEMPRE: `nome,telefone,enviado`
+- ✅ Coluna `enviado` deve estar vazia
+- ✅ Telefone apenas números (sem espaços, parênteses ou traços)
+
+### 5.3 Criar primeira campanha
+
+1. No dashboard, clique em **"Nova Campanha"**
 2. Preencha:
-   - Nome: "Teste Inicial"
-   - Descrição: "Primeira campanha de teste"
-3. Cole o ID de uma planilha do Google Sheets
-4. Aguarde carregar as informações
-5. Selecione a aba
-6. Verifique o preview
-7. Defina quantidade de disparos (comece com 5 para testar)
-8. Clique em "Criar Campanha"
+   - **Nome**: "Teste Inicial"
+   - **Descrição**: "Primeira campanha"
+3. **Arraste a planilha** para a área de upload (ou clique para selecionar)
+4. Aguarde... você verá um **preview dos dados**
+5. Verifique se os dados estão corretos
+6. Em "Quantidade de Disparos", escolha **3** (para testar)
+7. Clique em **"Criar Campanha"**
 
-### 6.3 Iniciar campanha
+### 5.4 Iniciar campanha
 
-1. Na página da campanha, clique em "Iniciar Campanha"
-2. Confirme
+1. Você será redirecionado para a página da campanha
+2. Clique em **"Iniciar Campanha"**
+3. Confirme no popup
+4. Status mudará para **"Ativa"**
+5. Veja "Pendentes: 3"
 
-### 6.4 Processar disparos
+### 5.5 Processar disparos
 
-Em outro terminal, execute:
+Abra um **TERCEIRO terminal** e execute:
 
 ```bash
 cd backend
 php bin/console app:process-dispatches
 ```
 
-Ou use a API:
+Ou via API:
 
 ```bash
+# Copie o token do localStorage do navegador (F12 > Application > Local Storage)
 curl -X POST http://localhost:8000/api/dispatches/process \
-  -H "Authorization: Bearer SEU_TOKEN_JWT"
+  -H "Authorization: Bearer SEU_TOKEN"
 ```
 
-### 6.5 Verificar disparos
+### 5.6 Ver resultados
 
-1. No frontend, veja o progresso em tempo real
-2. No N8N, verifique se os webhooks foram recebidos
-3. No Supabase, verifique a tabela `dispatches`
+1. Volte para a página da campanha
+2. Clique em **"Atualizar Dados"**
+3. Veja:
+   - Pendentes diminuindo
+   - Enviados aumentando
+   - Progresso aumentando
 
-## Passo 7: Configurar Processamento Automático
+4. Verifique no N8N se os webhooks chegaram
+5. No Supabase:
+   - Table Editor > `dispatches`
+   - Veja os registros criados
 
-### 7.1 Cronjob (Linux/Mac)
+✅ **Sistema funcionando!**
+
+---
+
+## Passo 6: Processamento Automático (Opcional)
+
+### Linux/Mac - Cron
 
 ```bash
 crontab -e
 ```
 
-Adicione:
+Adicione (substitua o caminho):
 
 ```cron
-*/5 * * * * cd /path/to/backend && php bin/console app:process-dispatches
+*/5 * * * * cd /caminho/completo/backend && php bin/console app:process-dispatches
 ```
 
-Isso processará disparos a cada 5 minutos.
+### Windows - Agendador de Tarefas
 
-### 7.2 Task Scheduler (Windows)
+1. Abra "Agendador de Tarefas"
+2. Criar Tarefa Básica
+3. Gatilho: Repetir a cada 5 minutos
+4. Ação: Iniciar programa
+   - **Programa**: `php.exe`
+   - **Argumentos**: `C:\caminho\backend\bin\console app:process-dispatches`
 
-1. Abra "Task Scheduler"
-2. Create Task > Trigger: Every 5 minutes
-3. Action: Start program `php.exe`
-4. Arguments: `/path/to/backend/bin/console app:process-dispatches`
+---
 
-## Passo 8: Deploy (Opcional)
+## Formato da Planilha
 
-### 8.1 Deploy do Frontend na Vercel
+### Estrutura Obrigatória
 
-```bash
-cd frontend
-npm install -g vercel
-vercel
+```csv
+nome,telefone,enviado
 ```
 
-Configure a variável de ambiente:
-- `VITE_API_URL`: URL completa da API (ex: https://api.seudominio.com/api)
+- **nome**: Nome do contato
+- **telefone**: Apenas números (11999999999)
+- **enviado**: Deixar vazio
 
-### 8.2 Deploy do Backend
+### Exemplo Completo
 
-Para Heroku, Railway, Render ou similar:
+```csv
+nome,telefone,enviado
+João Silva,11999999999,
+Maria Santos,11988888888,
+Pedro Oliveira,11977777777,
+Ana Costa,11966666666,
+```
 
-1. Configure as variáveis de ambiente
-2. Execute migrations/SQL no banco de produção
-3. Configure servidor web (Nginx/Apache)
-4. Faça upload das chaves JWT
-5. Faça upload do google-credentials.json
+### Formatos Aceitos
+
+- ✅ CSV (.csv) - UTF-8
+- ✅ Excel 2007+ (.xlsx)
+- ✅ Excel 97-2003 (.xls)
+
+---
 
 ## Troubleshooting
 
 ### Backend não inicia
 
-- Verifique se PHP 8.1+ está instalado: `php -v`
-- Verifique se as extensões estão instaladas: `php -m`
-- Verifique se a porta 8000 está livre
+**Erro: "Port 8000 already in use"**
+```bash
+php -S localhost:8080 -t public/
+```
 
-### Frontend não conecta na API
+**Erro: "Class not found"**
+```bash
+composer dump-autoload
+```
 
-- Verifique se o backend está rodando
-- Verifique CORS no backend
-- Abra DevTools > Network para ver erros
+### Erro ao conectar Supabase
 
-### Google Sheets não carrega
+**"could not connect to server"**
+- Verifique a senha na `DATABASE_URL`
+- Certifique-se de substituir `[YOUR-PASSWORD]`
 
-- Verifique se a API está ativada
-- Verifique se o arquivo JSON está no local correto
-- Verifique se a planilha foi compartilhada com a service account
+**"relation users does not exist"**
+- Execute o SQL novamente no Supabase
+- Verifique em Table Editor se as tabelas existem
 
-### Disparos não são enviados
+### Erro no upload
 
-- Verifique se o webhook N8N está ativo
-- Teste o webhook manualmente com curl
-- Verifique logs em `backend/var/log/`
+**"No file uploaded"**
+- Selecione um arquivo
+- Máximo: 10MB
 
-## Próximos Passos
+**"File type not supported"**
+- Use apenas CSV, XLS ou XLSX
 
-- Configure backup do banco de dados
-- Configure monitoramento (Sentry, etc)
-- Implemente rate limiting
-- Configure logs estruturados
-- Adicione testes automatizados
+**"No contacts found"**
+- Primeira linha deve ter: `nome,telefone,enviado`
+- Verifique se há dados nas linhas seguintes
+
+### Disparos não processam
+
+1. Execute `php bin/console app:process-dispatches`
+2. Teste o webhook N8N:
+   ```bash
+   curl -X POST https://seu-n8n.com/webhook/seu-path \
+     -H "Content-Type: application/json" \
+     -d '{"contact":{"nome":"Teste","telefone":"11999999999"}}'
+   ```
+3. Verifique se o workflow N8N está ativo
+4. Veja logs em `backend/var/log/dev.log`
+
+### Frontend não conecta
+
+**Erro 401**
+- Faça logout e login novamente
+- Limpe o cache (Ctrl+Shift+Delete)
+
+**Erro CORS**
+- Verifique se o backend está em `localhost:8000`
+
+---
+
+## Deploy em Produção
+
+### Backend
+- Heroku, Railway, DigitalOcean, VPS
+- Configure variáveis de ambiente
+- Use `APP_ENV=prod`
+- Execute SQL no Supabase de produção
+
+### Frontend
+- Vercel (grátis):
+  ```bash
+  cd frontend
+  vercel
+  ```
+- Configure `VITE_API_URL` com URL do backend
+
+---
 
 ## Suporte
 
-Se precisar de ajuda:
+- Logs: `backend/var/log/`
+- DevTools: F12 > Console
+- README.md para documentação completa
 
-1. Verifique os logs em `backend/var/log/`
-2. Abra DevTools no navegador
-3. Consulte a documentação no README.md
-4. Abra uma issue no repositório
+---
+
+**Pronto! Seu sistema está funcionando!** 🎉
