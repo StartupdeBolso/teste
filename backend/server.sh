@@ -1,17 +1,26 @@
 #!/bin/bash
 
-echo "🚀 Iniciando servidor PHP..."
+# N8N Dispatch SaaS - Server Startup Script
+# Usa o PHP padrão do sistema (deve ser >= 8.1)
+
+cd "$(dirname "$0")"
+
+echo "=================================="
+echo "🚀 N8N DISPATCH SAAS - SERVIDOR"
+echo "=================================="
 echo ""
-echo "Versão do PHP:"
-php --version | head -1
+echo "📌 Versão do PHP:"
+/usr/bin/php --version | head -1
 echo ""
-echo "Servidor rodando em: http://localhost:8000"
+echo "🌐 Servidor rodando em: http://localhost:8000"
 echo ""
-echo "Credenciais de teste:"
-echo "  Email: admin@teste.com"
-echo "  Senha: admin123"
+echo "🔐 Credenciais de teste:"
+echo "   Email: admin@teste.com"
+echo "   Senha: admin123"
 echo ""
-echo "Pressione Ctrl+C para parar"
+echo "⚠️  Pressione Ctrl+C para parar o servidor"
+echo "=================================="
 echo ""
 
-php -S localhost:8000 -t public/
+# Inicia o servidor
+/usr/bin/php -S localhost:8000 -t public/
